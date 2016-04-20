@@ -2,7 +2,9 @@ var io = require('sails.io.js')( require('socket.io-client') );
 io.sails.url = 'http://edr';
 
 var fs = require('fs');
+
 var request = require('request');
+
 var parse = require('csv-parse');
 var transform = require('stream-transform');
 var iconv = require('iconv-lite');
@@ -27,13 +29,17 @@ function download(callback) {
 
 function insert(company, callback) {
   io.socket.post('/company', company, function(resData, jwRes) {
-    callback(null, {resData: resData, jwRes: jwRes});
+    if(jwRes.statusCode = 200) {
+      callback(null, {resData: resData, jwRes: jwRes});
+    } else {
+      callback('Error');
+    }
   });
 }
 
 var mongoWriter = transform(function(record, callback) {
   insert(record, callback);
-}, {parallel: 1000});
+}, {parallel: 1});
 
 fileCheck(function() {
   var input = fs.createReadStream(uoFile);
@@ -49,7 +55,7 @@ fileCheck(function() {
       occupation: record["Основний вид діяльності"],
       status: record["Стан"]
     });
-  }, {parallel: 1000});
+  }, {parallel: 1});
   var stringify = transform(function(record, callback) {
     callback(null, JSON.stringify(record));
   });
