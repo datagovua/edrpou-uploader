@@ -1,0 +1,18 @@
+version: '2'
+services:
+  edr:
+    image: vanuan/edrpou-api
+    depends_on:
+    - mongo
+    environment:
+      NODE_ENV: production
+      PORT: 80
+  mongo:
+    image: mvertes/alpine-mongo
+  edr-uploader:
+    build: .
+    volumes:
+    - ./data:/data/
+    - .:/src
+    depends_on:
+    - edr
