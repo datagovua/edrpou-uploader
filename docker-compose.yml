@@ -13,6 +13,5 @@ services:
     build: .
     volumes:
     - ./data:/data/
-    - .:/src
     depends_on:
     - edr

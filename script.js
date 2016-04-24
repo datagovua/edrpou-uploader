@@ -1,5 +1,3 @@
-var io = require('sails.io.js')( require('socket.io-client') );
-io.sails.url = 'http://edr';
 
 var fs = require('fs');
 
@@ -9,42 +7,53 @@ var parse = require('csv-parse');
 var transform = require('stream-transform');
 var iconv = require('iconv-lite');
 
-var uoURL = 'http://data.gov.ua/file/3924/download?token=EhxNro4J';
-var uoFile = '/data/uo.csv';
+var uoZipUrl = 'http://old.minjust.gov.ua/downloads/15-UFOP.zip'
+var uoZipFile = '/data/edr/15-UFOP.zip';
+var uoFile = '/data/edr/uo.csv';
+var dataDir = '/data/edr/';
 
-function fileCheck(callback) {
+var downloadAndUnzip = require('./downloadAndUnzip');
+
+function downloadThen(done) {
+  var needToDownload = false;
   try {
     var stats = fs.statSync(uoFile);
-    callback();
   } catch(e) {
-    console.log(uoFile + ' doesn\'t exist, downloading...');
-    download(callback);
+    needToDownload = true;
+  }
+  if(needToDownload) {
+    console.log(uoZipFile + ' doesn\'t exist, downloading...');
+    downloadAndUnzip(uoZipUrl, uoZipFile, dataDir)
+    .then(function(filenames) {
+      console.log('File unzipped');
+      done();
+    });
+  } else {
+    console.log('File already exists');
+    done();
   }
 }
 
-function download(callback) {
-  var stream = request(uoURL).pipe(fs.createWriteStream(uoFile));
-  stream.on('finish', callback);
-}
+downloadThen(function() {
+  var io = require('sails.io.js')( require('socket.io-client') );
+  io.sails.initialConnectionHeaders = {nosession: true};
 
-function insert(company, callback) {
-  io.socket.post('/company', company, function(resData, jwRes) {
-    if(jwRes.statusCode = 200) {
-      callback(null, {resData: resData, jwRes: jwRes});
-    } else {
-      callback('Error');
-    }
-  });
-}
+  io.sails.url = 'http://edr';
 
-var mongoWriter = transform(function(record, callback) {
-  insert(record, callback);
-}, {parallel: 1});
+  var stream = require('stream');
+  var mongoWriter = new stream.Writable({objectMode: true});
+  mongoWriter._write = function (chunk, encoding, done) {
+    io.socket.post('/company', chunk, function(resData, jwRes) {
+      if(jwRes.statusCode != 200) {
+      }
+      done();
+    });
+  };
 
-fileCheck(function() {
+  console.log('Reading ' + uoFile)
   var input = fs.createReadStream(uoFile);
   var parser = parse({delimiter: ';', columns: true});
-  var transformer = transform(function(record, callback){
+  var transformer = transform(function(record, callback) {
     callback(null, {
       officialName: record["Найменування"],
       name: record["Скорочена назва"],
@@ -55,11 +64,7 @@ fileCheck(function() {
       occupation: record["Основний вид діяльності"],
       status: record["Стан"]
     });
-  }, {parallel: 1});
-  var stringify = transform(function(record, callback) {
-    callback(null, JSON.stringify(record));
-  });
+  }, {parallel: 10});
   input.pipe(iconv.decodeStream('win1251')).pipe(parser).pipe(transformer)
     .pipe(mongoWriter)
-    .pipe(stringify).pipe(process.stdout);
 });

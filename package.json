@@ -10,6 +10,7 @@
     "request": "^2.72.0",
     "sails.io.js": "^0.13.6",
     "socket.io-client": "^1.4.5",
-    "stream-transform": "^0.1.1"
+    "stream-transform": "^0.1.1",
+    "unzip": "^0.1.11"
   }
 }

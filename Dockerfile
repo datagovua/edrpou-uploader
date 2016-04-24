@@ -6,4 +6,4 @@ RUN npm install
 
 ADD . /src/
 
-ENTRYPOINT node /src/script.js
+CMD node /src/script.js
