@@ -1,4 +1,3 @@
-
 var fs = require('fs');
 
 var request = require('request');
@@ -35,20 +34,7 @@ function downloadThen(done) {
 }
 
 downloadThen(function() {
-  var io = require('sails.io.js')( require('socket.io-client') );
-  io.sails.initialConnectionHeaders = {nosession: true};
-
-  io.sails.url = 'http://edr';
-
-  var stream = require('stream');
-  var mongoWriter = new stream.Writable({objectMode: true});
-  mongoWriter._write = function (chunk, encoding, done) {
-    io.socket.post('/company', chunk, function(resData, jwRes) {
-      if(jwRes.statusCode != 200) {
-      }
-      done();
-    });
-  };
+  var socketWriter = require('./socket')();
 
   console.log('Reading ' + uoFile)
   var input = fs.createReadStream(uoFile);
@@ -66,5 +52,5 @@ downloadThen(function() {
     });
   }, {parallel: 10});
   input.pipe(iconv.decodeStream('win1251')).pipe(parser).pipe(transformer)
-    .pipe(mongoWriter)
+    .pipe(socketWriter)
 });
