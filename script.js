@@ -40,7 +40,6 @@ downloadThen(function() {
   var input = fs.createReadStream(uoFile);
   var parser = parse({delimiter: ';', columns: true});
   var transformer = transform(function(record) {
-    console.log("transforming");
     return {
       officialName: record["Найменування"],
       name: record["Скорочена назва"],
