@@ -6,12 +6,18 @@ function downloadAndUnzip(url, zipFile, path, callback) {
   var deferred = Promise.defer();
   var filenames = [];
   var readStream;
-  if(fs.statSync(zipFile)) {
+  var zipExists = true;
+  try {
+    fs.statSync(zipFile);
+  } catch(e) {
+    exists = false;
+  }
+  if(exists) {
     readStream = fs.createReadStream(zipFile);
     console.log('Reading ' + zipFile);
   } else {
     readStream = request(url);
-    console.error('Downloading')
+    console.error('Downloading zip')
   }
   readStream
   .on('error', function(error) {

@@ -43,7 +43,6 @@ downloadThen(function() {
     return {
       officialName: record["Найменування"],
       name: record["Скорочена назва"],
-      id: record["   "],
       edrpou: record["Код ЄДРПОУ"],
       address: record["Місцезнаходження"],
       mainPerson: record["ПІБ керівника"],
