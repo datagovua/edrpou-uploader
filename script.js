@@ -63,22 +63,21 @@ downloadThen(function() {
     .on('error', function(e){handleError(e, 'decoding file');})
     .on('end', function() { console.log("I'm done"); });
   parser
-    .on('error', function(e){handleError(e, 'parsing csv');})
-    .on('end', function() { console.log("I'm done"); })
+  .on('error', function(e){handleError(e, 'parsing csv');})
+  .on('end', function() { console.log("I'm done"); })
   transformer
-          .on('error', function(e){handleError(e, 'transforming csv to object');})
-          .on('unpipe', function() {console.log("Transformer: UNPIPE");})
-          .on('finish', function() {console.log("Transformer: finish");})
-          .on('end', function() {console.log("Transformer: end");})
+  .on('error', function(e){handleError(e, 'transforming csv to object');})
+  .on('unpipe', function() {console.log("Transformer: UNPIPE");})
+  .on('finish', function() {console.log("Transformer: finish");})
+  .on('end', function() {console.log("Transformer: end");})
   socketWriter
-          .on('error', function(e){
-            handleError(e, 'writing to db');
-            // continue piping!
-            transformer
-            .pipe(socketWriter);
-          })
-          .on('end', function() { console.log("I'm done"); })
-          .on('data', function() {console.log('writing data');});
+  .on('error', function(e){
+    handleError(e, 'writing to db');
+    // continue piping!
+    transformer
+    .pipe(socketWriter);
+  })
+  .on('end', function() { console.log("I'm done"); })
   input
   .pipe(decoder)
   .pipe(parser)
