@@ -12,6 +12,8 @@
     "unzip": "^0.1.11",
     "mongodb": "^2.1.16",
     "sails.io.js": "^0.13.6",
-    "socket.io-client": "^1.4.5"
+    "socket.io-client": "^1.4.5",
+    "knex": "^0.10.0",
+    "pg": "^4.5.5"
   }
 }

@@ -34,7 +34,7 @@ function downloadThen(done) {
 }
 
 downloadThen(function() {
-  var socketWriter = require('./socket')();
+  var myWriter = require('./postgres')();
 
   console.log('Reading ' + uoFile)
   var input = fs.createReadStream(uoFile);
@@ -70,17 +70,17 @@ downloadThen(function() {
   .on('unpipe', function() {console.log("Transformer: UNPIPE");})
   .on('finish', function() {console.log("Transformer: finish");})
   .on('end', function() {console.log("Transformer: end");})
-  socketWriter
+  myWriter
   .on('error', function(e){
     handleError(e, 'writing to db');
     // continue piping!
     transformer
-    .pipe(socketWriter);
+    .pipe(myWriter);
   })
   .on('end', function() { console.log("I'm done"); })
   input
   .pipe(decoder)
   .pipe(parser)
   .pipe(transformer)
-  .pipe(socketWriter);
+  .pipe(myWriter);
 });
