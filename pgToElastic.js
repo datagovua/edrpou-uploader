@@ -1,9 +1,9 @@
 var pg = require('pg')
 var elastic = require('elasticsearch')
 var QueryStream = require('pg-query-stream')
-var JSONStream = require('JSONStream')
-var WritableBulk = require('elasticsearch-streams').WritableBulk;
-var TransformToBulk = require('elasticsearch-streams').TransformToBulk;
+var ElasticsearchBulkIndexStream = require('elasticsearch-bulk-index-stream');
+var transform = require('stream-transform');
+
 
 var client = new pg.Client(process.env.PG_CONNECTION_STRING);
 var elasticClient = new elastic.Client({
@@ -18,19 +18,31 @@ client.connect(function(err) {
   stream.on('error', function(err) { console.log('error', err); });
   stream.on('close', function(){ client.end(); console.log('pg done'); } );
 
- 
-  var bulkExec = function(bulkCmds, callback) {
-    elasticClient.bulk({
-      index : 'companies-index',
-      type  : 'companies-type',
-      body  : bulkCmds
-    }, callback);
-  };
-  var ws = new WritableBulk(bulkExec);
-  var toBulk = new TransformToBulk(function getIndexTypeId(doc) { return { _id: doc.id }; });
+  
+  var elasticStream = new ElasticsearchBulkIndexStream(elasticClient, {
+    highWaterMark: 256,
+    flushTimeout: 500
+  });
 
-  stream.pipe(toBulk).pipe(ws);
-  ws.on('finish', function() { console.log('elastic done') });
-  ws.on('error', function(e) { console.log('elastic error', JSON.stringify(e)); });
+  var transformer = transform(function(record) {
+    console.log('write', record.id);
+    return {
+      index: 'companies-index',
+      type: 'companies-type',
+      id: record.id,
+      body: record
+    };
+  }, {parallel: 10,   highWaterMark: 256});
+
+  
+  stream
+    .pipe(transformer)
+    .pipe(elasticStream)
+    .on('error', function(error) {
+      console.log('error', error);
+    })
+    .on('finish', function() {
+      console.log('elastic finish');
+    });
 
 });
