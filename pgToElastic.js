@@ -13,14 +13,14 @@ var elasticClient = new elastic.Client({
 client.connect(function(err) {
   if(err) throw err;
 
-  var query = new QueryStream('SELECT * FROM companies');
+  var query = new QueryStream('SELECT * FROM companies SORT BY id');
   var stream = client.query(query);
   stream.on('error', function(err) { console.log('error', err); });
   stream.on('close', function(){ client.end(); console.log('pg done'); } );
 
   
   var elasticStream = new ElasticsearchBulkIndexStream(elasticClient, {
-    highWaterMark: 256,
+    highWaterMark: process.env.BATCH_SIZE || 10000,
     flushTimeout: 500
   });
 
@@ -32,7 +32,7 @@ client.connect(function(err) {
       id: record.id,
       body: record
     };
-  }, {parallel: 10,   highWaterMark: 256});
+  }, {parallel: 10,   highWaterMark: process.env.BATCH_SIZE || 10000 });
 
   
   stream
