@@ -1,17 +1,44 @@
 version: '2'
 services:
-#  edr:
-#    image: vanuan/edrpou-api
-#    depends_on:
-#    - mongo
-#    environment:
-#      NODE_ENV: production
-#      PORT: 80
-  mongo:
-    image: mvertes/alpine-mongo
+  edr-db:
+    image: kiasaki/alpine-postgres:9.5
+    environment:
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - edr-db:/var/lib/postgresql/data
+
   edr-uploader:
     build: .
     volumes:
     - ./data:/data/
+    environment:
+      PG_CONNECTION_STRING: postgres://postgres@edr-db/postgres
     depends_on:
-    - mongo
+    - edr-db
+
+  edr-uploader-elastic:
+    build: .
+    depends_on:
+     - edr-db
+    environment:
+      PG_CONNECTION_STRING: postgres://postgres@edr-db/postgres
+      ELASTIC_HOST: edr-elastic:9200
+    command: sh -c '/wait-for-it.sh -t 100 edr-elastic:9200 && node /src/pgToElastic.js'
+
+  edr-migrations:
+    build: ../edr-migrations
+    command: sh -c '/wait-for-it.sh -t 100 edr-db:5432 && npm install && knex migrate:latest'
+    depends_on:
+      - edr-db
+    environment:
+      PG_CONNECTION_STRING: postgres://postgres@edr-db/postgres
+
+  edr-elastic:
+    image: 'portefaix/elasticsearch:2.2.0'
+    ports:
+      - 9200:9200
+      - 9300:9300
+
+volumes:
+  edr-db:
+
