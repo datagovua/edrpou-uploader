@@ -13,7 +13,7 @@ var elasticClient = new elastic.Client({
 client.connect(function(err) {
   if(err) throw err;
 
-  var query = new QueryStream('SELECT * FROM companies SORT BY id');
+  var query = new QueryStream('SELECT * FROM companies ORDER BY id');
   var stream = client.query(query);
   stream.on('error', function(err) { console.log('error', err); });
   stream.on('close', function(){ client.end(); console.log('pg done'); } );
