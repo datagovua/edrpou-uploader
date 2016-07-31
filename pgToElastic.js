@@ -27,7 +27,7 @@ client.connect(function(err) {
   var transformer = transform(function(record) {
     console.log('write', record.id);
     return {
-      index: 'companies-index',
+      index: 'companies_index',
       type: 'companies-type',
       id: record.id,
       body: record
