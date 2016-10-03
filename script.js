@@ -55,15 +55,15 @@ downloadThen(function() {
   }
   input
     .on('error', function(e){handleError(e, 'reading file');})
-    .on('end', function() { console.log("I'm done"); });
+    .on('end', function() { console.log("reading file stream finished"); });
 
   var decoder = iconv.decodeStream('win1251');
   decoder
     .on('error', function(e){handleError(e, 'decoding file');})
-    .on('end', function() { console.log("I'm done"); });
+    .on('end', function() { console.log("decoding stream finished"); });
   parser
   .on('error', function(e){handleError(e, 'parsing csv');})
-  .on('end', function() { console.log("I'm done"); })
+  .on('end', function() { console.log("csv parser stream finished"); })
   transformer
   .on('error', function(e){handleError(e, 'transforming csv to object');})
   .on('unpipe', function() {console.log("Transformer: UNPIPE");})
@@ -76,7 +76,7 @@ downloadThen(function() {
     transformer
     .pipe(myWriter);
   })
-  .on('end', function() { console.log("I'm done"); })
+  .on('end', function() { console.log("writer stream finished"); })
   input
   .pipe(decoder)
   .pipe(parser)

@@ -9,22 +9,20 @@ var client = new pg.Client(process.env.PG_CONNECTION_STRING);
 var elasticClient = new elastic.Client({
   host: process.env.ELASTIC_HOST,
 });
+var query = new QueryStream('SELECT * FROM companies ORDER BY id');
 
-client.connect(function(err) {
+client.connect(function onPgConnect(err) {
+  var stream, elasticStream, transformer;
   if(err) throw err;
 
-  var query = new QueryStream('SELECT * FROM companies ORDER BY id');
-  var stream = client.query(query);
-  stream.on('error', function(err) { console.log('error', err); });
-  stream.on('close', function(){ client.end(); console.log('pg done'); } );
-
+  stream = client.query(query);
   
-  var elasticStream = new ElasticsearchBulkIndexStream(elasticClient, {
+  elasticStream = new ElasticsearchBulkIndexStream(elasticClient, {
     highWaterMark: process.env.BATCH_SIZE || 10000,
     flushTimeout: 500
   });
 
-  var transformer = transform(function(record) {
+  transformer = transform(function(record) {
     console.log('write', record.id);
     return {
       index: 'companies_index',
@@ -34,14 +32,18 @@ client.connect(function(err) {
     };
   }, {parallel: 10,   highWaterMark: process.env.BATCH_SIZE || 10000 });
 
-  
+
+  stream.on('error', function onPgErr(err) { console.log('error', err); });
+  stream.on('close', function onPgClose(){
+    client.end(); console.log('pg done');
+  });
   stream
     .pipe(transformer)
     .pipe(elasticStream)
-    .on('error', function(error) {
+    .on('error', function onEsErr(error) {
       console.log('error', error);
     })
-    .on('finish', function() {
+    .on('finish', function onEsFinish() {
       console.log('elastic finish');
     });
 
