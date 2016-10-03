@@ -30,7 +30,7 @@ client.connect(function(err) {
       index: 'companies_index',
       type: 'companies-type',
       id: record.id,
-      body: record
+      body: Object.assign({}, record) // prevent memory leak
     };
   }, {parallel: 10,   highWaterMark: process.env.BATCH_SIZE || 10000 });
 
