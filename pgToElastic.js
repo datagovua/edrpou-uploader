@@ -8,6 +8,8 @@ var transform = require('stream-transform');
 var client = new pg.Client(process.env.PG_CONNECTION_STRING);
 var elasticClient = new elastic.Client({
   host: process.env.ELASTIC_HOST,
+  maxRetries: 10,
+  requestTimeout: 60000
 });
 var query = new QueryStream('SELECT * FROM companies ORDER BY id');
 
